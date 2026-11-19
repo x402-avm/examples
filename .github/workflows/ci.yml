@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  localnet:
+    name: LocalNet Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install AlgoKit
+        run: pipx install algokit
+
+      - name: Start AlgoKit LocalNet
+        run: |
+          algokit localnet start
+          timeout 60 bash -c 'until curl -sf http://localhost:4001/health > /dev/null; do sleep 2; done'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          npm install
+
+      - name: Run all LocalNet examples
+        run: bash scripts/run_all_localnet.sh
+
+  public-networks:
+    name: Public Network Simulations
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          npm install
+
+      - name: Run TestNet simulations
+        run: |
+          python testnet/simulate.py
+          node testnet/simulate.mjs
+          python testnet/live_payment.py
+
+      - name: Run MainNet simulations
+        run: |
+          python mainnet/simulate.py
+          node mainnet/simulate.mjs
+          python mainnet/config.py --dry-run

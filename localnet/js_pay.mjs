@@ -1,0 +1,151 @@
+/**
+ * Full end-to-end payment flow against an x402 HTTP paywall on LocalNet.
+ *
+ * Demonstrates:
+ * 1. Funding a fresh test account from the LocalNet KMD dispenser.
+ * 2. Requesting a paywalled resource and receiving HTTP 402 with PAYMENT-REQUIRED.
+ * 3. Decoding payment requirements using decodePaymentRequired().
+ * 4. Building and signing the exact AVM transaction group via payForRequirement().
+ * 5. Retrying the request with PAYMENT-SIGNATURE and verifying exact 5000 microALGO deduction.
+ *
+ * How to run:
+ *   # Ensure server_for_js.py is running on port 9221
+ *   node localnet/js_pay.mjs
+ *
+ * What it prints:
+ *   HTTP 402 status, decoded requirement, HTTP 200 status, settlement txid,
+ *   and balance drop of exactly 5000 microALGO.
+ */
+
+import algosdk from 'algosdk';
+import {
+  decodePaymentRequired,
+  payForRequirement,
+} from 'x402-avm-js';
+
+const ALGOD_URL = 'http://localhost:4001';
+const ALGOD_TOKEN = 'a'.repeat(64);
+const KMD_URL = 'http://localhost';
+const KMD_PORT = 4002;
+const KMD_TOKEN = 'a'.repeat(64);
+const SERVER_URL = 'http://127.0.0.1:9221/paid';
+
+async function fundFromKmd(algod, kmd, targetAddr, amount = 10_000_000n) {
+  const wallets = (await kmd.listWallets()).wallets;
+  const defWallet = wallets.find((w) => w.name === 'unencrypted-default-wallet');
+  if (!defWallet) throw new Error('Default KMD wallet not found');
+
+  const handle = (await kmd.initWalletHandle(defWallet.id, '')).wallet_handle_token;
+  const addresses = (await kmd.listKeys(handle)).addresses;
+
+  let dispenserAddr = addresses[0];
+  let maxBal = 0n;
+  for (const addr of addresses) {
+    const info = await algod.accountInformation(addr).do();
+    const bal = BigInt(info.amount);
+    if (bal > maxBal) {
+      maxBal = bal;
+      dispenserAddr = addr;
+    }
+  }
+
+  const exported = await kmd.exportKey(handle, '', dispenserAddr);
+  const dispenserSk = exported.private_key;
+
+  const sp = await algod.getTransactionParams().do();
+  const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+    sender: dispenserAddr,
+    receiver: targetAddr,
+    amount,
+    suggestedParams: sp,
+  });
+
+  const signed = txn.signTxn(dispenserSk);
+  const { txid } = await algod.sendRawTransaction(signed).do();
+  await algosdk.waitForConfirmation(algod, txid, 5);
+}
+
+async function main() {
+  const algod = new algosdk.Algodv2(ALGOD_TOKEN, ALGOD_URL);
+  const kmd = new algosdk.Kmd(KMD_TOKEN, KMD_URL, KMD_PORT);
+
+  // 1. Generate and fund a fresh buyer account
+  const buyer = algosdk.generateAccount();
+  const buyerAddr = buyer.addr.toString();
+  console.log(`Created buyer account: ${buyerAddr}`);
+  await fundFromKmd(algod, kmd, buyerAddr, 10_000_000n);
+
+  const accBefore = await algod.accountInformation(buyerAddr).do();
+  const balBefore = BigInt(accBefore.amount);
+  console.log(`Initial buyer balance: ${balBefore} microALGO`);
+
+  // 2. Request paywalled endpoint (expect 402 Payment Required)
+  console.log(`\nFetching ${SERVER_URL} without payment...`);
+  const initialRes = await fetch(SERVER_URL);
+  console.log(`Initial response status: ${initialRes.status}`);
+
+  if (initialRes.status !== 402) {
+    throw new Error(`Expected HTTP 402, got ${initialRes.status}`);
+  }
+
+  const reqHeader = initialRes.headers.get('PAYMENT-REQUIRED') ?? initialRes.headers.get('payment-required');
+  if (!reqHeader) {
+    throw new Error('PAYMENT-REQUIRED header missing in 402 response');
+  }
+
+  // 3. Decode payment requirements
+  const challenge = decodePaymentRequired(reqHeader);
+  console.log(`Decoded x402 challenge version: ${challenge.x402Version}`);
+  const req = challenge.accepts[0];
+  console.log(`Accepted requirement: ${req.amount} units of asset ${req.asset} to ${req.payTo}`);
+
+  // 4. Build and sign payment group
+  const signTxns = async (unsignedBytesList, indexes) => {
+    return unsignedBytesList.map((bytes, idx) => {
+      if (indexes.includes(idx)) {
+        const txn = algosdk.decodeUnsignedTransaction(bytes);
+        return txn.signTxn(buyer.sk);
+      }
+      return null;
+    });
+  };
+
+  const paymentSignature = await payForRequirement(challenge, buyerAddr, algod, signTxns);
+  console.log(`Payment signature header constructed (length: ${paymentSignature.length})`);
+
+  // 5. Retry request with PAYMENT-SIGNATURE
+  console.log(`\nRetrying ${SERVER_URL} with PAYMENT-SIGNATURE...`);
+  const paidRes = await fetch(SERVER_URL, {
+    headers: {
+      'PAYMENT-SIGNATURE': paymentSignature,
+    },
+  });
+
+  console.log(`Paid response status: ${paidRes.status}`);
+  if (paidRes.status !== 200) {
+    const errorText = await paidRes.text();
+    throw new Error(`Expected HTTP 200, got ${paidRes.status}: ${errorText}`);
+  }
+
+  const paidData = await paidRes.json();
+  console.log(`Response payload: ${JSON.stringify(paidData)}`);
+
+  // 6. Verify buyer balance drop
+  const accAfter = await algod.accountInformation(buyerAddr).do();
+  const balAfter = BigInt(accAfter.amount);
+  const balanceDrop = balBefore - balAfter;
+
+  console.log(`Final buyer balance: ${balAfter} microALGO`);
+  console.log(`Balance drop: ${balanceDrop} microALGO`);
+
+  if (balanceDrop !== 5000n) {
+    throw new Error(`Expected exact balance drop of 5000 microALGO, got ${balanceDrop}`);
+  }
+
+  console.log('\nPayment completed and verified successfully.');
+}
+
+main().catch((err) => {
+  console.error('Test failed:', err);
+  process.exit(1);
+});

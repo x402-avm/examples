@@ -1,0 +1,20 @@
+{
+  "name": "x402-avm-examples",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Runnable code examples for x402 on Algorand (LocalNet, TestNet, MainNet)",
+  "scripts": {
+    "build:paywall": "esbuild localnet/browser_paywall/app.js --bundle --outfile=localnet/browser_paywall/bundle.js --format=esm",
+    "test:localnet": "bash scripts/run_all_localnet.sh",
+    "test:testnet": "node testnet/simulate.mjs",
+    "test:mainnet": "node mainnet/simulate.mjs"
+  },
+  "dependencies": {
+    "x402-avm-js": "^0.3.0",
+    "algosdk": "^3.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
