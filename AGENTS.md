@@ -37,7 +37,8 @@ examples/
 │   └── live_payment.py            # Live TestNet payment (requires env vars; otherwise exits 0)
 ├── mainnet/                       # MainNet examples (strictly read-only simulations)
 │   ├── simulate.py                # Read-only simulate for ALGO and USDC (Python)
-│   ├── simulate.mjs               # Read-only simulate for ALGO and USDC (JavaScript)
+│   └── simulate.mjs               # Read-only simulate for ALGO and USDC (JavaScript)
+├── shared/                        # Shared multi-network utilities
 │   └── config.py                  # Multi-network configuration switcher
 ├── scripts/
 │   └── run_all_localnet.sh        # Runs all LocalNet examples and verifies cleanup
@@ -84,7 +85,7 @@ python testnet/live_payment.py   # Exits 0 if credentials are not configured
 # MainNet
 python mainnet/simulate.py
 node mainnet/simulate.mjs
-python mainnet/config.py --dry-run
+python shared/config.py --dry-run
 ```
 
 ## Conventions

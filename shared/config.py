@@ -5,12 +5,12 @@ NETWORK environment variable. Selects ALGO for LocalNet development and
 USDC for TestNet and MainNet.
 
 Usage:
-    NETWORK=localnet python mainnet/config.py
-    NETWORK=testnet python mainnet/config.py
-    NETWORK=mainnet python mainnet/config.py
+    NETWORK=localnet python shared/config.py
+    NETWORK=testnet python shared/config.py
+    NETWORK=mainnet python shared/config.py
 
 Dry run:
-    python mainnet/config.py --dry-run
+    python shared/config.py --dry-run
 """
 
 from __future__ import annotations

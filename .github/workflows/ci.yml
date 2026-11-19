@@ -46,6 +46,9 @@ jobs:
       - name: Run all LocalNet examples
         run: bash scripts/run_all_localnet.sh
 
+      - name: Type check TypeScript examples
+        run: npm run typecheck
+
   public-networks:
     name: Public Network Simulations
     runs-on: ubuntu-latest
@@ -80,4 +83,4 @@ jobs:
         run: |
           python mainnet/simulate.py
           node mainnet/simulate.mjs
-          python mainnet/config.py --dry-run
+          python shared/config.py --dry-run

@@ -29,7 +29,7 @@ Documentation: https://x402-avm.github.io
 | [httpx_client.py](localnet/httpx_client.py) | Automated payment HTTPX client for paywalls | LocalNet | Python | `python localnet/httpx_client.py` | HTTP 200, balance drop: 10000 |
 | [server_for_js.py](localnet/server_for_js.py) | FastAPI paywall server for JavaScript client tests | LocalNet | Python | `python localnet/server_for_js.py` | Server listening on port 9221 |
 | [js_pay.mjs](localnet/js_pay.mjs) | JavaScript x402 client using `x402-avm-js` | LocalNet | JavaScript | `node localnet/js_pay.mjs` | HTTP 200, balance drop: 5000 |
-| [browser_wallet.ts](localnet/browser_wallet.ts) | React browser wallet integration wrapper | LocalNet / Web | TypeScript | `npx tsc --noEmit localnet/browser_wallet.ts` | Type check passes |
+| [browser_wallet.ts](localnet/browser_wallet.ts) | React browser wallet integration wrapper | LocalNet / Web | TypeScript | `npm run typecheck` | Type check passes |
 | [paid_mcp_tool](localnet/paid_mcp_tool/) | Paid summarize tool with dynamic length pricing | LocalNet | Python | `python localnet/paid_mcp_tool/server.py` | Summarize tool on port 9231 |
 | [browser_paywall](localnet/browser_paywall/) | Complete browser paywall with frontend bundle | LocalNet | Python / JS | `python localnet/browser_paywall/server.py` | Web paywall on port 9232 |
 | [testnet/simulate.py](testnet/simulate.py) | Read-only simulation for ALGO and USDC on TestNet | TestNet | Python | `python testnet/simulate.py` | All 4 TestNet simulations: ok |
@@ -37,11 +37,11 @@ Documentation: https://x402-avm.github.io
 | [testnet/live_payment.py](testnet/live_payment.py) | Real TestNet payment (requires env vars; else exits 0) | TestNet | Python | `python testnet/live_payment.py` | Settled transaction ID (or skipped) |
 | [mainnet/simulate.py](mainnet/simulate.py) | Read-only simulation for ALGO and USDC on MainNet | MainNet | Python | `python mainnet/simulate.py` | All 4 MainNet simulations: ok |
 | [mainnet/simulate.mjs](mainnet/simulate.mjs) | Read-only simulation for ALGO and USDC on MainNet | MainNet | JavaScript | `node mainnet/simulate.mjs` | All 4 MainNet simulations: ok |
-| [mainnet/config.py](mainnet/config.py) | Multi-network config manager and dry run inspector | Multi | Python | `python mainnet/config.py --dry-run` | Configuration matrix (0 txns sent) |
+| [shared/config.py](shared/config.py) | Multi-network config manager and dry run inspector | Multi | Python | `python shared/config.py --dry-run` | Configuration matrix (0 txns sent) |
 
 ## Prerequisites
 
-1. **Python**: Python 3.10, 3.11, 3.12, or 3.13.
+1. **Python**: Python 3.10+ (tested on Python 3.10 through 3.14).
 2. **Node.js**: Node 18, 20, 22, or 24.
 3. **AlgoKit LocalNet**: Needed for running the LocalNet examples:
    ```bash

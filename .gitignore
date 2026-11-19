@@ -1,5 +1,7 @@
 # Build artifacts
 localnet/browser_paywall/bundle.js
+bundle.js
+**/bundle.js
 
 # Python
 __pycache__/

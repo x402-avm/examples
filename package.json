@@ -8,13 +8,16 @@
     "build:paywall": "esbuild localnet/browser_paywall/app.js --bundle --outfile=localnet/browser_paywall/bundle.js --format=esm",
     "test:localnet": "bash scripts/run_all_localnet.sh",
     "test:testnet": "node testnet/simulate.mjs",
-    "test:mainnet": "node mainnet/simulate.mjs"
+    "test:mainnet": "node mainnet/simulate.mjs",
+    "typecheck": "tsc --noEmit localnet/browser_wallet.ts --skipLibCheck"
   },
   "dependencies": {
-    "x402-avm-js": "^0.3.1",
-    "algosdk": "^3.0.0"
+    "algosdk": "^3.0.0",
+    "x402-avm-js": "^0.3.1"
   },
   "devDependencies": {
-    "esbuild": "^0.28.2"
+    "@txnlab/use-wallet-react": "^5.4.1",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
   }
 }
