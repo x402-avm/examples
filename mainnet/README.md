@@ -14,7 +14,7 @@ For production deployment instructions, real USDC settlement, fee payer funding,
 ## Contents
 
 - **`simulate.py`**: Read-only simulation for x402 Algorand payments on MainNet evaluating ALGO (asset 0) and Circle USDC (asset 31566704) payment groups against real ledger accounts using empty signatures without spending funds.
-- **`simulate.mjs`**: Read-only simulation of ALGO and USDC payments on Algorand MainNet in JavaScript using `x402-avm-js` and `algosdk` with a watch-only signer.
+- **`simulate.mjs`**: Read-only simulation of ALGO and USDC payments on Algorand MainNet in JavaScript using `x402-avm-js` and `algosdk` with a watch-only signer and explicit spend controls (`maxAmount`, typed `X402AvmError`).
 
 *(Note: Multi-network runtime configuration has moved to [`shared/config.py`](../shared/config.py)).*
 

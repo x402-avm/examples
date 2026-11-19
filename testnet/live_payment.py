@@ -16,14 +16,12 @@ How to run:
 
 import os
 import sys
-from algosdk import mnemonic, transaction
 from algosdk.v2client import algod
 
 from x402.schemas import PaymentPayload, PaymentRequirements
-from x402_algorand.constants import ALGORAND_TESTNET_CAIP2
+from x402_algorand import ALGORAND_TESTNET_CAIP2, PayerAvmSigner, ServerAvmSigner
 from x402_algorand.exact.client import ExactAvmScheme as ClientScheme
 from x402_algorand.exact.facilitator import ExactAvmScheme as FacilitatorScheme
-from ai_economy_sdk import DefaultAvmSigner
 
 ALGOD_URL = "https://testnet-api.algonode.cloud"
 AMOUNT_MICROALGO = 1000  # 0.001 ALGO
@@ -45,17 +43,11 @@ def main():
     print("Initializing TestNet clients and accounts...")
     client = algod.AlgodClient("", ALGOD_URL)
 
-    buyer_sk = mnemonic.to_private_key(buyer_mn)
-    buyer_addr = mnemonic.to_public_key(buyer_mn)
-
-    server_sk = mnemonic.to_private_key(server_mn)
-    server_addr = mnemonic.to_public_key(server_mn)
-
+    buyer_signer = PayerAvmSigner.from_mnemonic(buyer_mn)
+    server_signer = ServerAvmSigner.from_mnemonic(server_mn, client)
+    buyer_addr, server_addr = buyer_signer.address, server_signer.address
     print(f"Buyer address:  {buyer_addr}")
     print(f"Server address: {server_addr}")
-
-    buyer_signer = DefaultAvmSigner(buyer_sk, algod_client=client)
-    server_signer = DefaultAvmSigner(server_sk, algod_client=client)
 
     client_scheme = ClientScheme(buyer_signer, algod_url=ALGOD_URL)
     facilitator_scheme = FacilitatorScheme(server_signer)

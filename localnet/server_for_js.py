@@ -21,36 +21,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import uvicorn
 from fastapi import FastAPI, Request, Response
-from algosdk import kmd
-from algosdk.v2client import algod
-from ai_economy_sdk import DefaultAvmSigner
-from x402_algorand.exact.facilitator import ExactAvmScheme
-from x402_algorand import caip2_from_genesis_hash
 from x402.http.utils import decode_payment_signature_header
+from x402_algorand import ServerAvmSigner, caip2_from_genesis_hash
+from x402_algorand.exact.facilitator import ExactAvmScheme
 
-ALGOD_URL = "http://localhost:4001"
-ALGOD_TOKEN = "a" * 64
-KMD_URL = "http://localhost:4002"
-KMD_TOKEN = "a" * 64
+from _localnet import ALGOD as algod_client, new_funded_account
+
 PORT = 9221
 
-algod_client = algod.AlgodClient(ALGOD_TOKEN, ALGOD_URL)
-
-
-def get_server_dispenser_account() -> tuple[str, str]:
-    """Retrieve LocalNet default wallet dispenser account."""
-    k = kmd.KMDClient(KMD_TOKEN, KMD_URL)
-    wallets = k.list_wallets()
-    w = next(x for x in wallets if x["name"] == "unencrypted-default-wallet")
-    handle = k.init_wallet_handle(w["id"], "")
-    keys = k.list_keys(handle)
-    addr = max(keys, key=lambda a: algod_client.account_info(a)["amount"])
-    sk = k.export_key(handle, "", addr)
-    return addr, sk
-
-
-server_addr, server_sk = get_server_dispenser_account()
-server_signer = DefaultAvmSigner(server_sk, algod_client=algod_client)
+server_signer = ServerAvmSigner.from_private_key(new_funded_account()[0], algod_client)
+server_addr = server_signer.address
 facilitator = ExactAvmScheme(server_signer)
 
 app = FastAPI(title="x402-avm-js Test Paywall Server")

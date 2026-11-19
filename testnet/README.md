@@ -5,7 +5,7 @@ This directory contains examples for validating and executing `x402` Algorand pa
 ## Contents
 
 - **`simulate.py`**: Read-only simulation for x402 Algorand payments on TestNet evaluating ALGO and USDC payment groups against live ledger state using empty signatures without spending funds.
-- **`simulate.mjs`**: Read-only simulation of ALGO and USDC payments on Algorand TestNet in JavaScript using `x402-avm-js` and `algosdk` with a watch-only signer.
+- **`simulate.mjs`**: Read-only simulation of ALGO and USDC payments on Algorand TestNet in JavaScript using `x402-avm-js` and `algosdk` with a watch-only signer and explicit spend controls (`maxAmount`, typed `X402AvmError`).
 - **`live_payment.py`**: Optional live TestNet payment execution template for x402 on Algorand that settles real on-chain transactions when explicit environment variables are configured.
 
 ---

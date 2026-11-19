@@ -1,7 +1,7 @@
 """FastMCP server payment-gated with ai-economy-sdk on Algorand LocalNet.
 
 Runs a FastMCP server with a single paid 'echo' tool priced at 5,000 microALGO.
-Funds a server account from LocalNet dispenser and serves SSE requests on port 9201.
+Funds a server account from LocalNet dispenser and serves Streamable HTTP (/mcp) on port 9201.
 
 How to run:
     python localnet/quickstart_server.py
@@ -43,7 +43,7 @@ def main() -> None:
         prices={"echo": TOOL_PRICE_MICROALGO},
     )
 
-    app = gate.wrap(mcp)
+    app = gate.wrap(mcp, transport="streamable-http")
     uvicorn.run(app, host="127.0.0.1", port=SERVER_PORT, log_level="warning")
 
 

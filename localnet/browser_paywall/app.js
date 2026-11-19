@@ -1,58 +1,37 @@
 /**
- * Browser paywall client application using x402-avm-js.
- *
- * Demonstrates the 402 payment flow in the browser:
- * 1. Requests /api/premium -> catches HTTP 402 with PAYMENT-REQUIRED header.
- * 2. Decodes requirement with decodePaymentRequired().
- * 3. Builds and signs exact AVM payment group with payForRequirement().
- * 4. Retries request with PAYMENT-SIGNATURE header to unlock content.
+ * Browser paywall client (x402-avm-js): fetch /api/premium, pay the 402 challenge with the
+ * caller's wallet signer, retry with PAYMENT-SIGNATURE.
  */
-import { decodePaymentRequired, payForRequirement } from 'x402-avm-js';
 import algosdk from 'algosdk';
+import { PaymentNotAllowedError, SpendLimitExceededError, decodePaymentRequired, payForRequirement } from 'x402-avm-js';
+
+// Never pay more than 0.01 ALGO per request, whatever the server asks for.
+const SPEND_CONTROLS = { maxAmount: 10_000n, allowedAssets: ['0'] };
 
 export async function fetchPremiumContent(
   payerAddress,
   signTxns,
   algodUrl = 'http://localhost:4001',
-  algodToken = 'a'.repeat(64)
+  algodToken = 'a'.repeat(64),
 ) {
-  // 1. Initial request without payment header
-  const initialRes = await fetch('/api/premium');
-  if (initialRes.status === 200) {
-    return await initialRes.json();
-  }
-  if (initialRes.status !== 402) {
-    throw new Error(`Unexpected server response: HTTP ${initialRes.status}`);
-  }
+  const first = await fetch('/api/premium');
+  if (first.status === 200) return first.json();
+  if (first.status !== 402) throw new Error(`Unexpected server response: HTTP ${first.status}`);
 
-  // 2. Extract PAYMENT-REQUIRED header
-  const reqHeader = initialRes.headers.get('payment-required');
-  if (!reqHeader) {
-    throw new Error('Missing payment-required header in 402 response');
-  }
+  const challenge = decodePaymentRequired(first.headers.get('payment-required'));
+  const algod = new algosdk.Algodv2(algodToken, algodUrl, '');
 
-  // 3. Decode payment requirement
-  const paymentRequired = decodePaymentRequired(reqHeader);
-  const algodClient = new algosdk.Algodv2(algodToken, algodUrl, '');
-
-  // 4. Construct and sign payment group using provided wallet signer callback
-  const paymentSignature = await payForRequirement(
-    paymentRequired,
-    payerAddress,
-    algodClient,
-    signTxns
-  );
-
-  // 5. Retry request with PAYMENT-SIGNATURE header
-  const paidRes = await fetch('/api/premium', {
-    headers: {
-      'payment-signature': paymentSignature,
-    },
-  });
-
-  if (paidRes.status !== 200) {
-    throw new Error(`Payment settlement refused by server: HTTP ${paidRes.status}`);
+  let signature;
+  try {
+    signature = await payForRequirement(challenge, payerAddress, algod, signTxns, SPEND_CONTROLS);
+  } catch (err) {
+    if (err instanceof SpendLimitExceededError || err instanceof PaymentNotAllowedError) {
+      throw new Error(`Payment refused by spend controls: ${err.message}`);
+    }
+    throw err;
   }
 
-  return await paidRes.json();
+  const paid = await fetch('/api/premium', { headers: { 'payment-signature': signature } });
+  if (paid.status !== 200) throw new Error(`Payment refused by server: HTTP ${paid.status}`);
+  return paid.json();
 }

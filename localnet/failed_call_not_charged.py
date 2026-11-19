@@ -27,7 +27,7 @@ from ai_economy_sdk import DefaultAvmSigner, PaymentGate, paid_mcp_session
 from _localnet import ALGOD, new_funded_account
 
 SERVER_PORT = 9204
-SERVER_URL = f"http://127.0.0.1:{SERVER_PORT}/sse"
+SERVER_URL = f"http://127.0.0.1:{SERVER_PORT}/mcp"
 PRICE = 5000
 
 
@@ -50,7 +50,7 @@ def main() -> None:
         prices={"fail_tool": PRICE},
     )
 
-    app = gate.wrap(mcp)
+    app = gate.wrap(mcp, transport="streamable-http")
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=SERVER_PORT, log_level="error"))
     server_thread = threading.Thread(target=server.run, daemon=True)
     server_thread.start()

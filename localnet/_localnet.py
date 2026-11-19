@@ -1,5 +1,6 @@
 """LocalNet helper for doc examples: funds test accounts using LocalNet's KMD dispenser."""
 from algosdk import account, kmd, transaction
+from algosdk.atomic_transaction_composer import AccountTransactionSigner
 from algosdk.v2client import algod
 
 ALGOD_URL = "http://localhost:4001"
@@ -26,6 +27,6 @@ def new_funded_account(algos: int = 10) -> tuple[str, str]:
     d_addr, d_sk = dispenser()
     sp = ALGOD.suggested_params()
     txn = transaction.PaymentTxn(d_addr, sp, addr, algos * 1_000_000)
-    ALGOD.send_transaction(txn.sign(d_sk))
+    ALGOD.send_transaction(AccountTransactionSigner(d_sk).sign_transactions([txn], [0])[0])
     transaction.wait_for_confirmation(ALGOD, txn.get_txid(), 10)
     return sk, addr

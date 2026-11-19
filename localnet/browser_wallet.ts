@@ -11,10 +11,7 @@
  */
 
 import { useWallet } from '@txnlab/use-wallet-react';
-import {
-  payForRequirement,
-  type PaymentRequired,
-} from 'x402-avm-js';
+import { payForRequirement, type PaymentRequired, type SpendControls } from 'x402-avm-js';
 
 /**
  * Execute an x402 payment challenge using the connected browser wallet.
@@ -28,11 +25,14 @@ import {
  *
  * @param challenge - Decoded PaymentRequired challenge from HTTP 402 response.
  * @param wallet - useWallet() hook return value.
+ * @param controls - Spend controls; without them the default cap of 1,000,000 base units applies.
+ *   Throws SpendLimitExceededError / PaymentNotAllowedError (both X402AvmError) before the wallet is asked to sign.
  * @returns Promise resolving to the base64-encoded PAYMENT-SIGNATURE header.
  */
 export async function payWithBrowserWallet(
   challenge: PaymentRequired,
-  wallet: ReturnType<typeof useWallet>
+  wallet: ReturnType<typeof useWallet>,
+  controls: SpendControls = { maxAmount: 100_000n, allowedAssets: ['0'] },
 ): Promise<string> {
   const { activeAddress, algodClient, signTransactions } = wallet;
 
@@ -65,10 +65,5 @@ export async function payWithBrowserWallet(
     return mapped;
   };
 
-  return await payForRequirement(
-    challenge,
-    activeAddress,
-    algodClient,
-    safeSignTxns
-  );
+  return await payForRequirement(challenge, activeAddress, algodClient, safeSignTxns, controls);
 }

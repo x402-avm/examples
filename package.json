@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=20" },
   "description": "Runnable code examples for x402 on Algorand (LocalNet, TestNet, MainNet)",
   "scripts": {
     "build:paywall": "esbuild localnet/browser_paywall/app.js --bundle --outfile=localnet/browser_paywall/bundle.js --format=esm",
@@ -13,7 +14,7 @@
   },
   "dependencies": {
     "algosdk": "^3.0.0",
-    "x402-avm-js": "^0.3.1"
+    "x402-avm-js": "^0.4.0"
   },
   "devDependencies": {
     "@txnlab/use-wallet-react": "^5.4.1",

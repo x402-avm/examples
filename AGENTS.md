@@ -13,9 +13,10 @@ Documentation site: https://x402-avm.github.io
 ```
 examples/
 ├── localnet/                      # Full end-to-end paid flows on Algorand LocalNet
-│   ├── _localnet.py               # Shared LocalNet dispenser and account helper
-│   ├── quickstart_server.py       # FastMCP paid tool server (port 9201)
-│   ├── quickstart_client.py       # paid_mcp_session client
+│   ├── _localnet.py               # Shared LocalNet dispenser and account helper (Python)
+│   ├── _localnet.mjs              # Shared LocalNet dispenser and signer helper (JavaScript)
+│   ├── quickstart_server.py       # FastMCP paid tool server, Streamable HTTP (port 9201, /mcp)
+│   ├── quickstart_client.py       # paid_mcp_session client (Streamable HTTP)
 │   ├── pricing.py                 # Fixed, dynamic, and bulk pricing (port 9202)
 │   ├── passes.py                  # Vendor-scoped subscription passes (port 9203)
 │   ├── identity.py                # X-Identity-Txn generation and verification (Python)
@@ -30,7 +31,7 @@ examples/
 │   ├── networks.py                # Network ID, genesis hash, and endpoint inspector
 │   ├── browser_wallet.ts          # Wallet integration example (Defly, Pera, Kibisis)
 │   ├── browser_paywall/           # Full web paywall tutorial (port 9232)
-│   └── paid_mcp_tool/             # Paid MCP tool server and client tutorial (port 9231)
+│   └── paid_mcp_tool/             # Paid MCP tool server and client tutorial (port 9231, /mcp)
 ├── testnet/                       # TestNet examples (read-only simulations and safe live template)
 │   ├── simulate.py                # Read-only simulate for ALGO and USDC (Python)
 │   ├── simulate.mjs               # Read-only simulate for ALGO and USDC (JavaScript)
@@ -93,7 +94,11 @@ python shared/config.py --dry-run
 - **No Hard-Coded Paths**: Never use absolute developer paths (e.g. `/Users/...` or local usernames). Use relative paths or `Path(__file__).resolve().parent`.
 - **Published Packages**: Use published package imports:
   - Python: `from ai_economy_sdk import ...`, `from x402 import ...`, `from x402_algorand import ...`
-  - JavaScript: `import { ... } from 'x402-avm-js';`
+  - JavaScript: `import { ... } from 'x402-avm-js';` (Node >= 20)
+- **Signers**: Use the shipped `ServerAvmSigner` (facilitator / fee payer) and `PayerAvmSigner` (client) from `x402_algorand`; do not hand-write signer classes.
+- **MCP transport**: Serve with `gate.wrap(mcp, transport="streamable-http")` (endpoint `/mcp`); clients use `paid_mcp_session("http://host:port/mcp", ...)`. Omitting `transport` emits a `FutureWarning`.
+- **Spend controls**: x402 clients cap ALGO at 1,000,000 microALGO by default; `x402-avm-js` `payForRequirement` takes spend controls as its 5th argument (default cap 1,000,000 base units).
+- **Deprecated APIs**: Use `sign_identity_txn`, not `sign_identity`; do not read `DefaultAvmSigner.private_key`.
 - **Network Identifiers**: Use CAIP-2 standard IDs:
   - MainNet: `algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73k`
   - TestNet: `algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDe`

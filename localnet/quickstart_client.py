@@ -1,7 +1,7 @@
 """Paid MCP client session using ai-economy-sdk on Algorand LocalNet.
 
 Funds a fresh buyer account via the LocalNet dispenser, establishes a paid MCP
-session to http://127.0.0.1:9201/sse, calls the 'echo' tool, and verifies the on-chain
+session to http://127.0.0.1:9201/mcp, calls the 'echo' tool, and verifies the on-chain
 charge.
 
 How to run:
@@ -18,20 +18,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from ai_economy_sdk import paid_mcp_session
+from ai_economy_sdk import AIEconomyError, paid_mcp_session
 from _localnet import ALGOD, new_funded_account
 
-SERVER_URL = "http://127.0.0.1:9201/sse"
+SERVER_URL = "http://127.0.0.1:9201/mcp"
 
 
 async def main() -> None:
     buyer_sk, buyer_addr = new_funded_account(algos=5)
     before_balance = ALGOD.account_info(buyer_addr)["amount"]
 
-    async with paid_mcp_session(SERVER_URL, buyer_sk, "localnet") as session:
-        result = await session.call_tool("echo", {"text": "hello world"})
-        output_text = result.content[0].text
-        print(f"Result: {output_text}")
+    try:
+        async with paid_mcp_session(SERVER_URL, buyer_sk, "localnet") as session:
+            result = await session.call_tool("echo", {"text": "hello world"})
+            print(f"Result: {result.content[0].text}")
+    except AIEconomyError as err:  # payment refused, settlement failed, bad config ...
+        raise SystemExit(f"Paid call failed: {err}")
 
     after_balance = ALGOD.account_info(buyer_addr)["amount"]
     drop = before_balance - after_balance

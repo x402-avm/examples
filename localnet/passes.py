@@ -31,7 +31,7 @@ from ai_economy_sdk.chain import ChainReader
 from _localnet import ALGOD, INDEXER_URL, new_funded_account
 
 SERVER_PORT = 9203
-SERVER_URL = f"http://127.0.0.1:{SERVER_PORT}/sse"
+SERVER_URL = f"http://127.0.0.1:{SERVER_PORT}/mcp"
 SCOPE = "listing:echo-1"
 PASS_PRICE = 50_000
 TOOL_PRICE = 5_000
@@ -59,7 +59,7 @@ def main() -> None:
         pass_days=30.0,
     )
 
-    app = gate.wrap(mcp)
+    app = gate.wrap(mcp, transport="streamable-http")
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=SERVER_PORT, log_level="warning"))
     server_thread = threading.Thread(target=server.run, daemon=True)
     server_thread.start()

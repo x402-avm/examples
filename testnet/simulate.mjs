@@ -17,9 +17,13 @@
 import algosdk from 'algosdk';
 import {
   TESTNET,
+  X402AvmError,
   algodClient,
   payForRequirement,
 } from 'x402-avm-js';
+
+// Refuse anything above 10,000 base units (the default cap is 1,000,000).
+const SPEND_CONTROLS = { maxAmount: 10_000n };
 
 async function fundedUsdcHolders(net, algod) {
   const url = `${net.indexerUrl}/v2/assets/${net.usdc}/balances?currency-greater-than=5000000&limit=40`;
@@ -76,7 +80,7 @@ async function main() {
       accepts: [requirement],
     };
 
-    const paymentSignatureHeader = await payForRequirement(challenge, payer, algod, emptySigner);
+    const paymentSignatureHeader = await payForRequirement(challenge, payer, algod, emptySigner, SPEND_CONTROLS);
     const decoded = JSON.parse(new TextDecoder().decode(algosdk.base64ToBytes(paymentSignatureHeader)));
 
     const txns = decoded.payload.paymentGroup.map(
@@ -107,6 +111,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('TestNet simulation failed:', err);
+  // x402-avm-js errors carry a stable `code`, e.g. SPEND_LIMIT_EXCEEDED.
+  console.error('TestNet simulation failed:', err instanceof X402AvmError ? `${err.code}: ${err.message}` : err);
   process.exit(1);
 });

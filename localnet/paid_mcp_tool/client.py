@@ -4,7 +4,7 @@ Connects to the paid summarize tool on port 9231 via paid_mcp_session, pays the
 x402 payment on Algorand LocalNet, and confirms the transaction via Indexer.
 
 How to run:
-    python client.py
+    python localnet/paid_mcp_tool/client.py
 
 Expected output:
     Calling summarize tool...
@@ -13,33 +13,18 @@ Expected output:
     Confirmed TxID: <txid> (confirmed at round <round>)
 """
 import asyncio
+import sys
 import time
-from algosdk import account, kmd, transaction
-from algosdk.v2client import algod, indexer
-from ai_economy_sdk import paid_mcp_session
+from pathlib import Path
 
-ALGOD = algod.AlgodClient("a" * 64, "http://localhost:4001")
-INDEXER = indexer.IndexerClient("", "http://localhost:8980")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from ai_economy_sdk import AIEconomyError, paid_mcp_session
+from algosdk.v2client import indexer
 
-def dispenser():
-    """Retrieve LocalNet dispenser account from KMD."""
-    k = kmd.KMDClient("a" * 64, "http://localhost:4002")
-    w = next(x for x in k.list_wallets() if x["name"] == "unencrypted-default-wallet")
-    h = k.init_wallet_handle(w["id"], "")
-    addr = max(k.list_keys(h), key=lambda a: ALGOD.account_info(a)["amount"])
-    return addr, k.export_key(h, "", addr)
+from _localnet import ALGOD, ALGOD_TOKEN, ALGOD_URL, INDEXER_URL, new_funded_account
 
-
-def new_funded_account(algos=10):
-    """Generate a new account funded from the LocalNet dispenser."""
-    sk, addr = account.generate_account()
-    d_addr, d_sk = dispenser()
-    sp = ALGOD.suggested_params()
-    txn = transaction.PaymentTxn(d_addr, sp, addr, algos * 1_000_000)
-    ALGOD.send_transaction(txn.sign(d_sk))
-    transaction.wait_for_confirmation(ALGOD, txn.get_txid(), 10)
-    return sk, addr
+INDEXER = indexer.IndexerClient("", INDEXER_URL)
 
 
 async def main():
@@ -54,27 +39,14 @@ async def main():
 
     start_round = ALGOD.status()["last-round"]
 
-    print("Opening paid MCP session to http://127.0.0.1:9231/sse ...")
+    print("Opening paid MCP session to http://127.0.0.1:9231/mcp ...")
     async with paid_mcp_session(
-        sse_url="http://127.0.0.1:9231/sse",
-        private_key=buyer_sk,
-        network="localnet",
-        algod_url="http://localhost:4001",
-        algod_token="a" * 64,
+        "http://127.0.0.1:9231/mcp", buyer_sk, "localnet", algod_url=ALGOD_URL, algod_token=ALGOD_TOKEN
     ) as session:
         print("Calling summarize tool...")
         res = await session.call_tool("summarize", {"text": test_text})
 
-        summary_text = ""
-        for content in res.content:
-            if hasattr(content, "text"):
-                summary_text += content.text
-            elif isinstance(content, dict) and "text" in content:
-                summary_text += content["text"]
-            else:
-                summary_text += str(content)
-
-        print(f"Result: {summary_text.strip()}")
+        print(f"Result: {res.content[0].text}")
 
     # Look up payment transaction on Indexer by buyer address
     # Give indexer up to 5 seconds to ingest
