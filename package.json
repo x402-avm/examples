@@ -11,7 +11,7 @@
     "test:mainnet": "node mainnet/simulate.mjs"
   },
   "dependencies": {
-    "x402-avm-js": "^0.3.0",
+    "x402-avm-js": "^0.3.1",
     "algosdk": "^3.0.0"
   },
   "devDependencies": {
