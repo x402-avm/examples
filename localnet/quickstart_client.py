@@ -32,7 +32,7 @@ async def main() -> None:
         async with paid_mcp_session(SERVER_URL, buyer_sk, "localnet") as session:
             result = await session.call_tool("echo", {"text": "hello world"})
             print(f"Result: {result.content[0].text}")
-    except AIEconomyError as err:  # payment refused, settlement failed, bad config ...
+    except AIEconomyError as err:  # spend controls refused the price (SpendLimitExceededError, 0.5.1+), settlement failed, bad config ...
         raise SystemExit(f"Paid call failed: {err}")
 
     after_balance = ALGOD.account_info(buyer_addr)["amount"]

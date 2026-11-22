@@ -1,9 +1,10 @@
 // LocalNet helper for the JavaScript examples: algod client and KMD-dispenser funding.
 import algosdk from 'algosdk';
+import { algodClient } from 'x402-avm-js';
 
 const TOKEN = 'a'.repeat(64);
 export const ALGOD_URL = 'http://localhost:4001';
-export const algod = new algosdk.Algodv2(TOKEN, ALGOD_URL);
+export const algod = algodClient('localnet'); // port 4001 (needs x402-avm-js >= 0.4.1)
 const kmd = new algosdk.Kmd(TOKEN, 'http://localhost', 4002);
 
 /** Generate a new account and fund it with `algos` ALGO from the LocalNet dispenser. */

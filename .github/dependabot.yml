@@ -12,8 +12,8 @@ updates:
           - "minor"
           - "patch"
     ignore:
-      # fastmcp 4.x is incompatible with ai-economy-sdk==0.5.0 (requires fastmcp>=3.4,<4)
-      # Error: Because ai-economy-sdk>=0.5.0 depends on fastmcp>=3.4,<4 and you require ai-economy-sdk==0.5.0, we can conclude that you require fastmcp>=3.4,<4. And because you require fastmcp>=4.2.0, requirements are unsatisfiable.
+      # fastmcp 4.x is incompatible with ai-economy-sdk==0.5.1 (requires fastmcp>=3.4,<4)
+      # Error: Because ai-economy-sdk>=0.5.1 depends on fastmcp>=3.4,<4 and you require ai-economy-sdk==0.5.1, we can conclude that you require fastmcp>=3.4,<4. And because you require fastmcp>=4.2.0, requirements are unsatisfiable.
       - dependency-name: "fastmcp"
         update-types:
           - "version-update:semver-major"
